@@ -14,6 +14,16 @@ from src.action.IAction import *
 
 
 class MyBot(IBot):
+
+    def __init__(self, name = None, color = None):
+        self.name   = name
+        self.color  = color
+        self.pawn   = None
+        self.fences = []
+        self.score  = 0
+        self.startPosition = None
+        self.endPositions = []
+
     def play(self, board) -> IAction:
         # TODO
         pass

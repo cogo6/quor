@@ -20,7 +20,7 @@ class Pawn(IDrawable):
         self.coord  = None
 
     def draw(self, fillColor = None, textColor = Color.WHITE.value):
-        if not INTERFACE:
+        if not self.board.display:
             return 
         center = self.getSquare().middle
         radius = int(self.board.squareSize*0.4)

@@ -30,7 +30,7 @@ class Square(IDrawable):
         self.middle      = Point(self.xMiddle, self.yMiddle)
 
     def draw(self, color = Color.SQUARE.value):
-        if not INTERFACE:
+        if not self.board.display:
             return 
         rectangle = Rectangle(self.topLeft, self.bottomRight)
         rectangle.setFill(color)

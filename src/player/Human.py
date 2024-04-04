@@ -12,9 +12,11 @@ from src.action.Quit    import *
 
 
 
+
+
 class Human(IPlayer):
     def play(self, board) -> IAction:
-        if not INTERFACE:
+        if not board.display:
             raise Exception("")
         while True:
             key = board.window.getKey()

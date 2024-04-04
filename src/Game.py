@@ -13,6 +13,7 @@ from src.interface.Color     import *
 from src.interface.Board     import *
 from src.interface.Pawn      import *
 from src.player.Human        import *
+from src.player.MyBot        import *
 from src.action.PawnMove     import *
 from src.action.FencePlacing import *
 from src.Path                import *
@@ -38,19 +39,22 @@ class Game:
         "4"
     ]
 
-    def __init__(self, players, cols = 9, rows = 9, totalFenceCount = 20, squareSize = 32, innerSize = None):
+    def __init__(self, players, display = False, cols = 9, rows = 9, totalFenceCount = 20, squareSize = 32, innerSize = None):
+        print("players : ", players)
         if innerSize is None:
             innerSize = int(squareSize/8)
         self.totalFenceCount = totalFenceCount
+        self.display = display
+
         # Create board instance
-        board = Board(self, cols, rows, squareSize, innerSize)
+        board = Board(self, cols, rows, squareSize, innerSize, self.display)
         # Support only 2 or 4 players
-        playerCount = min(int(len(players)/2)*2, 4)
+        self.playerCount = 2
         self.players = []
+        self.currentPlayerIndex = 0
+        self.finished = False
         # For each player
-        for i in range(playerCount):
-            if not INTERFACE and isinstance(players[i], Human):
-                raise Exception("Cannot launch a blind game with human players")
+        for i in range(self.playerCount):
             # Define player name and color
             if players[i].name is None:
                 players[i].name = Game.DefaultNameForPlayer[i]
@@ -64,50 +68,51 @@ class Game:
             self.players.append(players[i])
         self.board = board
 
-    def start(self, roundCount = 1):
+        # For each round
+        # Reset board stored valid pawn moves & fence placings, and redraw empty grid
+        self.board.initStoredValidActions()
+        self.board.draw()
+        self.playerCount = len(self.players)
+        # Share fences between players
+        playerFenceCount = int(self.totalFenceCount / self.playerCount)
+        self.board.fences, self.board.pawns = [], []
+        # For each player
+        for i in range(self.playerCount):
+            player = self.players[i]
+            # Place player pawn at start position and add fences to player stock
+            player.pawn.place(player.startPosition)
+            for j in range(playerFenceCount):
+                player.fences.append(Fence(self.board, player))
+        # Define randomly first player (coin toss)
+        self.currentPlayerIndex = random.randrange(self.playerCount)
+
+
+
+
+    def start(self):
         """
         Launch a series of rounds; for each round, ask successively each player to play.
         """
-        roundNumberZeroFill = len(str(roundCount))
-        # For each round
-        for roundNumber in range(1, roundCount + 1):
-            # Reset board stored valid pawn moves & fence placings, and redraw empty grid
-            self.board.initStoredValidActions()
-            self.board.draw()
-            print("ROUND #%s: " % str(roundNumber).zfill(roundNumberZeroFill), end="")
-            playerCount = len(self.players)
-            # Share fences between players
-            playerFenceCount = int(self.totalFenceCount/playerCount)
-            self.board.fences, self.board.pawns = [], []
-            # For each player
-            for i in range(playerCount):
-                player = self.players[i]
-                # Place player pawn at start position and add fences to player stock
-                player.pawn.place(player.startPosition)
-                for j in range(playerFenceCount):
-                    player.fences.append(Fence(self.board, player))
-            # Define randomly first player (coin toss)
-            currentPlayerIndex = random.randrange(playerCount)
-            finished = False
-            while not finished:
-                player = self.players[currentPlayerIndex]
-                # The player chooses its action (manually for human players or automatically for bots)
-                action = player.play(self.board)
-                if isinstance(action, PawnMove):
-                    player.movePawn(action.toCoord)
-                    # Check if the pawn has reach one of the player targets
-                    if player.hasWon():
-                        finished = True
-                        print("Player %s won" % player.name)
-                        player.score += 1
-                elif isinstance(action, FencePlacing):
-                    player.placeFence(action.coord, action.direction)
-                elif isinstance(action, Quit):
-                    finished = True
-                    print("Player %s quitted" % player.name)
-                currentPlayerIndex = (currentPlayerIndex + 1) % playerCount
-                if INTERFACE:
-                    time.sleep(TEMPO_SEC)
+        while not self.finished:
+            player = self.players[self.currentPlayerIndex]
+            # The player chooses its action (manually for human players or automatically for bots)
+
+            action = player.play(self.board)
+            if isinstance(action, PawnMove):
+                player.movePawn(action.toCoord)
+                # Check if the pawn has reach one of the player targets
+                if player.hasWon():
+                    self.finished = True
+                    print("Player %s won" % player.name)
+                    player.score += 1
+            elif isinstance(action, FencePlacing):
+                player.placeFence(action.coord, action.direction)
+            elif isinstance(action, Quit):
+                self.finished = True
+                print("Player %s quitted" % player.name)
+            self.currentPlayerIndex = (self.currentPlayerIndex + 1) % self.playerCount
+            if self.display:
+                time.sleep(TEMPO_SEC)
         print()
         #self.board.drawOnConsole()
         # Display final scores
@@ -119,9 +124,10 @@ class Game:
             	bestPlayer = player
         print("Player %s won with %d victories!" % (bestPlayer.name, bestPlayer.score))
 
+
     def end(self):
         """
         Called at the end in order to close the window.
         """
-        if INTERFACE:
+        if self.display:
             self.board.window.close()

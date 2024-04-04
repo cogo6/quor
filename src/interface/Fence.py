@@ -23,7 +23,7 @@ class Fence(IDrawable):
         self.player = player
 
     def draw(self, color = None):
-        if not INTERFACE:
+        if not self.board.display:
             return 
         square = self.getSquare()
         rectangleLength = 2*self.board.squareSize + self.board.innerSize

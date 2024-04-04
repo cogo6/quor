@@ -23,13 +23,14 @@ from src.exception.PlayerPathObstructedException import *
 
 
 class Board(IDrawable):
-    def __init__(self, game, cols, rows, squareSize, innerSize):
+    def __init__(self, game, cols, rows, squareSize, innerSize, display = False):
         self.game = game
         self.cols,       self.rows      = cols,       rows
         self.squareSize, self.innerSize = squareSize, innerSize
         self.grid = [[Square(self, GridCoordinates(col, row)) for row in range(rows)] for col in range(cols)]
         self.width, self.height = squareSize*cols + innerSize*(cols - 1), squareSize*rows + innerSize*(rows - 1)
-        if INTERFACE:
+        self.display = display
+        if self.display:
             self.window = GraphWin("Quoridor", self.width, self.height)
         self.pawns  = []
         self.fences = []
@@ -89,7 +90,7 @@ class Board(IDrawable):
                 self.storedValidPawnMoves[coord], self.storedValidPawnMovesIgnoringPawns[coord] = coordValidPawnMoves, coordValidPawnMovesIgnoringPawns
 
     def draw(self):
-        if not INTERFACE:
+        if not self.display:
             return
         background = Rectangle(Point(0, 0), Point(self.width, self.height))
         background.setFill(Color.WHITE.value)
@@ -243,7 +244,7 @@ class Board(IDrawable):
         return False
 
     def displayValidPawnMoves(self, player, validMoves = None):
-        if not INTERFACE:
+        if not self.display:
             return
         if validMoves is None:
             validMoves = self.storedValidPawnMoves[player.pawn.coord] #self.validPawnMoves(player.pawn.coord)
@@ -254,7 +255,7 @@ class Board(IDrawable):
             del possiblePawn
 
     def hideValidPawnMoves(self, player, validMoves = None):
-        if not INTERFACE:
+        if not self.display:
             return
         if validMoves is None:
             validMoves = self.storedValidPawnMoves[player.pawn.coord] #self.validPawnMoves(player.pawn.coord)
@@ -311,7 +312,7 @@ class Board(IDrawable):
         return False
 
     def displayValidFencePlacings(self, player, validPlacings = None):
-        if not INTERFACE:
+        if not self.display:
             return
         if validPlacings is None:
             validPlacings = self.storedValidFencePlacings#self.validFencePlacings()
@@ -322,7 +323,7 @@ class Board(IDrawable):
             del possibleFence
 
     def hideValidFencePlacings(self, player, validPlacings = None):
-        if not INTERFACE:
+        if not self.display:
             return
         if validPlacings is None:
             validPlacings = self.storedValidFencePlacings#self.validFencePlacings()
@@ -367,7 +368,7 @@ class Board(IDrawable):
 
     # Move to Path.draw (idem for displayPawnMove and displayFencePlacing)
     def displayPath(self, path, color = None):
-        if not INTERFACE:
+        if not self.display:
             return
         if not path.moves:
             return
@@ -380,7 +381,7 @@ class Board(IDrawable):
             circle.draw(self.window)
 
     def hidePath(self, path):
-        if not INTERFACE:
+        if not self.display:
             return
         if not path.moves:
             return
